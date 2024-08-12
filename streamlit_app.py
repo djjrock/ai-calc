@@ -177,7 +177,7 @@ st.header("Service Parameters")
 col3, col4 = st.columns(2)
 
 with col3:
-    eleven_labs_tokens_per_minute = st.number_input("11 Labs Tokens/Minute", value=150, step=10)
+    eleven_labs_tokens_per_minute = st.number_input("11 Labs Tokens/Minute", value=300, step=10)
     deepgram_rate_per_hour = st.number_input("Deepgram Rate per Hour ($)", value=0.25, step=0.01)
     openai_input_tokens_per_min = st.number_input("OpenAI Input Tokens/Minute", value=600, step=10)
 
