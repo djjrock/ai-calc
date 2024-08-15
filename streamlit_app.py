@@ -48,13 +48,13 @@ def calculate_costs(inputs):
     # --- 11 Labs Cost (Only for Answered Calls) ---
     total_chars = ai_processed_minutes * eleven_labs_tokens_per_minute
     eleven_labs_tiers = [
-        {"chars": 11000000, "cost": 1100},
-        {"chars": 20000000, "cost": 1800},
-        {"chars": 50000000, "cost": 4000},
-        {"chars": 100000000, "cost": 7000},
-        {"chars": 200000000, "cost": 12000},
-        {"chars": 350000000, "cost": 17500},
-        {"chars": 500000000, "cost": 20000},
+        {"chars": 11000000, "cost": 550},
+        {"chars": 20000000, "cost": 900},
+        {"chars": 50000000, "cost": 2000},
+        {"chars": 100000000, "cost": 3500},
+        {"chars": 200000000, "cost": 6000},
+        {"chars": 350000000, "cost": 8750},
+        {"chars": 500000000, "cost": 10000},
     ]
     selected_tier = next((tier for tier in eleven_labs_tiers if tier['chars'] >= total_chars), eleven_labs_tiers[-1])
     eleven_labs_cost = selected_tier['cost']
