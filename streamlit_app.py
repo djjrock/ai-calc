@@ -46,18 +46,31 @@ def calculate_costs(inputs):
     avg_concurrent_calls = calls_per_minute * avg_call_length
 
     # --- 11 Labs Cost (Only for Answered Calls) ---
-    total_chars = ai_processed_minutes * eleven_labs_tokens_per_minute
+    if campaign_length_days > 30:
+        ai_processed_minutes_per_month = ai_processed_minutes * 30 / campaign_length_days
+    else:
+        ai_processed_minutes_per_month = ai_processed_minutes
+    total_chars_per_month = ai_processed_minutes_per_month * eleven_labs_tokens_per_minute
     eleven_labs_tiers = [
-        {"chars": 11000000, "cost": 550},
-        {"chars": 20000000, "cost": 900},
-        {"chars": 50000000, "cost": 2000},
-        {"chars": 100000000, "cost": 3500},
-        {"chars": 200000000, "cost": 6000},
-        {"chars": 350000000, "cost": 8750},
-        {"chars": 500000000, "cost": 10000},
+        {"Tier": 0, "chars": 11000000, "cost": 550},
+        {"Tier": 1, "chars": 20000000, "cost": 900},
+        {"Tier": 2, "chars": 50000000, "cost": 2000},
+        {"Tier": 3, "chars": 100000000, "cost": 3500},
+        {"Tier": 4, "chars": 200000000, "cost": 6000},
+        {"Tier": 5, "chars": 350000000, "cost": 8750},
+        {"Tier": 6, "chars": 500000000, "cost": 10000},
+        {"Tier": 7, "chars": 1000000000, "cost": 15000},
+        {"Tier": 8, "chars": 2000000000, "cost": 20000},
+        {"Tier": 9, "chars": 3000000000, "cost": 25500},
+        {"Tier": 10, "chars": 4000000000, "cost": 30000},
+        {"Tier": 11, "chars": 5000000000, "cost": 35000},
+        {"Tier": 12, "chars": 7500000000, "cost": 45000},
+        {"Tier": 13, "chars": 10000000000, "cost": 50000}
     ]
-    selected_tier = next((tier for tier in eleven_labs_tiers if tier['chars'] >= total_chars), eleven_labs_tiers[-1])
-    eleven_labs_cost = selected_tier['cost']
+
+    selected_tier = next((tier for tier in eleven_labs_tiers if tier['chars'] >= total_chars_per_month), eleven_labs_tiers[-1])
+    eleven_labs_cost_per_month = selected_tier['cost']
+    eleven_labs_cost = eleven_labs_cost_per_month * (campaign_length_days / 30)
 
     # --- Deepgram Cost (Only for Answered Calls) ---
     deepgram_cost = (ai_processed_minutes / 60) * deepgram_rate_per_hour
@@ -120,7 +133,8 @@ def calculate_costs(inputs):
             "avg_concurrent_calls": avg_concurrent_calls
         },
         "eleven_labs": {
-            "total_chars": total_chars,
+            "Tier": selected_tier['Tier'],
+            "total_chars_per_month": total_chars_per_month,
             "selected_tier": selected_tier['chars'],
             "cost": eleven_labs_cost
         },
@@ -177,7 +191,7 @@ st.header("Service Parameters")
 col3, col4 = st.columns(2)
 
 with col3:
-    eleven_labs_tokens_per_minute = st.number_input("11 Labs Tokens/Minute", value=300, step=10)
+    eleven_labs_tokens_per_minute = st.number_input("11 Labs Tokens/Minute", value=150, step=10)
     deepgram_rate_per_hour = st.number_input("Deepgram Rate per Hour ($)", value=0.25, step=0.01)
     openai_input_tokens_per_min = st.number_input("OpenAI Input Tokens/Minute", value=600, step=10)
 
