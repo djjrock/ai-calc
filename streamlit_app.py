@@ -24,8 +24,13 @@ def calculate_costs(inputs):
     turn_off_servers_at_night = inputs['turn_off_servers_at_night']
     openai_peak_factor = inputs['openai_peak_factor']
 
+    # --- Auxiliary Variables ---
+    days_used = campaign_length_days * (days_per_week / 7)
+    days_used_rounded_up = math.ceil(days_used)
+    days_used_rounded_down = math.floor(days_used)
+
     # --- Call Statistics ---
-    calls_per_day = total_calls / campaign_length_days
+    calls_per_day = total_calls / days_used_rounded_down
     answered_calls = round(total_calls * (answer_rate / 100))
     voicemails = round(total_calls * (voicemail_rate / 100))
     unanswered_calls = total_calls - answered_calls - voicemails
@@ -37,8 +42,8 @@ def calculate_costs(inputs):
     # Only answered calls use AI services
     ai_processed_minutes = answered_minutes
 
-    answered_calls_per_day = answered_calls / campaign_length_days
-    voicemails_per_day = voicemails / campaign_length_days
+    answered_calls_per_day = answered_calls / days_used_rounded_down
+    voicemails_per_day = voicemails / days_used_rounded_down
 
     # --- Average Concurrent Calls (for answered calls only) ---
     total_minutes_per_day = hours_per_day * 60
@@ -47,37 +52,38 @@ def calculate_costs(inputs):
 
     # --- 11 Labs Cost (Only for Answered Calls) ---
     if campaign_length_days > 30:
-        ai_processed_minutes_per_month = ai_processed_minutes * 30 / campaign_length_days
+        ai_processed_minutes_per_month = ai_processed_minutes * 30 * (days_per_week / 7) / campaign_length_days
     else:
         ai_processed_minutes_per_month = ai_processed_minutes
     total_chars_per_month = ai_processed_minutes_per_month * eleven_labs_tokens_per_minute
     eleven_labs_tiers = [
-        {"Tier": 0, "chars": 11000000, "cost": 550},
-        {"Tier": 1, "chars": 20000000, "cost": 900},
-        {"Tier": 2, "chars": 50000000, "cost": 2000},
-        {"Tier": 3, "chars": 100000000, "cost": 3500},
-        {"Tier": 4, "chars": 200000000, "cost": 6000},
-        {"Tier": 5, "chars": 350000000, "cost": 8750},
-        {"Tier": 6, "chars": 500000000, "cost": 10000},
-        {"Tier": 7, "chars": 1000000000, "cost": 15000},
-        {"Tier": 8, "chars": 2000000000, "cost": 20000},
-        {"Tier": 9, "chars": 3000000000, "cost": 25500},
-        {"Tier": 10, "chars": 4000000000, "cost": 30000},
-        {"Tier": 11, "chars": 5000000000, "cost": 35000},
-        {"Tier": 12, "chars": 7500000000, "cost": 45000},
-        {"Tier": 13, "chars": 10000000000, "cost": 50000}
+        {"Tier": 0, "chars": 11000000, "cost": 1100},
+        {"Tier": 1, "chars": 20000000, "cost": 1800},
+        {"Tier": 2, "chars": 50000000, "cost": 4000},
+        {"Tier": 3, "chars": 100000000, "cost": 7000},
+        {"Tier": 4, "chars": 200000000, "cost": 12000},
+        {"Tier": 5, "chars": 350000000, "cost": 17500},
+        {"Tier": 6, "chars": 500000000, "cost": 20000},
+        {"Tier": 7, "chars": 1000000000, "cost": 30000},
+        {"Tier": 8, "chars": 2000000000, "cost": 40000},
+        {"Tier": 9, "chars": 3000000000, "cost": 51000},
+        {"Tier": 10, "chars": 4000000000, "cost": 60000},
+        {"Tier": 11, "chars": 5000000000, "cost": 70000},
+        {"Tier": 12, "chars": 7500000000, "cost": 90000},
+        {"Tier": 13, "chars": 10000000000, "cost": 100000}
     ]
+
 
     selected_tier = next((tier for tier in eleven_labs_tiers if tier['chars'] >= total_chars_per_month), eleven_labs_tiers[-1])
     eleven_labs_cost_per_month = selected_tier['cost']
     eleven_labs_cost = eleven_labs_cost_per_month * (campaign_length_days / 30)
 
     # --- Deepgram Cost (Only for Answered Calls) ---
-    deepgram_cost = (ai_processed_minutes / 60) * deepgram_rate_per_hour
+    deepgram_cost = math.ceil( (ai_processed_minutes / 60) * deepgram_rate_per_hour )
 
     # --- OpenAI Cost (Only for Answered Calls) ---
-    openai_bundle_input_capacity = 20000  # tokens per minute
-    openai_bundle_output_capacity = 2000  # tokens per minute
+    openai_bundle_input_capacity = 30000  # tokens per minute
+    openai_bundle_output_capacity = 2500  # tokens per minute
 
     total_input_tokens_per_day = answered_calls_per_day * openai_input_tokens_per_min * avg_call_length
     total_output_tokens_per_day = answered_calls_per_day * openai_output_tokens_per_min * avg_call_length
@@ -120,17 +126,18 @@ def calculate_costs(inputs):
     # --- Return Results ---
     return {
         "call_stats": {
-            "total_calls": total_calls,
-            "campaign_length_days": campaign_length_days,
-            "calls_per_day": calls_per_day,
-            "answered_calls": answered_calls,
-            "voicemails": voicemails,
-            "unanswered_calls": unanswered_calls,
-            "total_minutes": total_minutes,
-            "ai_processed_minutes": ai_processed_minutes,
-            "answered_calls_per_day": answered_calls_per_day,
-            "voicemails_per_day": voicemails_per_day,
-            "avg_concurrent_calls": avg_concurrent_calls
+            "total_calls": f"{int(total_calls):,}",
+            "campaign_length_days": f"{int(campaign_length_days):,}",
+            "productive_days": f"{int(days_used_rounded_up):,}",
+            "calls_per_day": f"{int(calls_per_day):,}",
+            "answered_calls": f"{int(answered_calls):,}",
+            "voicemails": f"{int(voicemails):,}",
+            "unanswered_calls": f"{int(unanswered_calls):,}",
+            "total_minutes": f"{int(total_minutes):,}",
+            "ai_processed_minutes": f"{int(ai_processed_minutes):,}",
+            "answered_calls_per_day": f"{int(answered_calls_per_day):,}",
+            "voicemails_per_day": f"{int(voicemails_per_day):,}",
+            "avg_concurrent_calls": f"{avg_concurrent_calls:,.1f}"  # Un decimal con separador de miles
         },
         "eleven_labs": {
             "Tier": selected_tier['Tier'],
@@ -201,7 +208,7 @@ with col4:
     aws_server_cost = st.number_input("AWS Server Cost per Month ($)", value=750, step=10)
     aws_server_capacity = st.number_input("AWS Server Capacity (Concurrent Calls)", value=20, step=1)
     turn_off_servers_at_night = st.checkbox("Turn off AWS Servers at Night", value=False)
-    openai_peak_factor = st.number_input("OpenAI Peak Factor (Multiplier)", value=1.2, step=0.1)
+    openai_peak_factor = st.number_input("OpenAI Peak Factor (Multiplier)", value=5.5, step=0.1)
 
 # --- Calculate and Display Results ---
 inputs = {
